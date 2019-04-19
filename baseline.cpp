@@ -1,3 +1,9 @@
+/*
+	Name: Alan Truong
+	Name: Lanchau Letran
+	Class: Cs 3800 section B
+*/
+
 #include <cstdlib>
 #include <iostream>
 #include <fstream>

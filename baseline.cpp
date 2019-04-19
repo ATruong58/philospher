@@ -11,7 +11,7 @@
 using namespace std;
 
 //this is how many poems you want each Phil to construct & save
-const int MAXMESSAGES = 10; 
+const int MAXMESSAGES = 20; 
 
 //if you change this base, update the Makefile "clean" accordingly
 const string fileBase = "outFile"; 
@@ -22,7 +22,7 @@ int main ( int argc, char *argv[] )
   int p;  //total MPI processes
   MPI::Status status;
   int tag = 1;
-
+  
   //  Initialize MPI.
   MPI::Init ( argc, argv );
 
@@ -47,8 +47,13 @@ int main ( int argc, char *argv[] )
   int msgIn, msgOut;
   int leftNeighbor = (id + p - 1) % p;
   int rightNeighbor = (id + 1) % p;
-
+  bool firstIteration = true;
+  bool isEven = false;
   pomerize P;
+
+  if(p%2 == 0){
+	  isEven = true;
+  }
 
   string lFile = fileBase + to_string(id);
   string rFile = fileBase + to_string(rightNeighbor);
@@ -56,28 +61,52 @@ int main ( int argc, char *argv[] )
   ofstream foutRight(rFile.c_str(), ios::out | ios::app );
 
   while (numWritten < MAXMESSAGES) {
-    //send 1 test message to each neighbor
-    	msgOut = rand() % p; //pick a number/message
-	MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag ); 
-    	msgOut = rand() % p; //pick a new number/message
-	MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag ); 
-        
-    //receive 1 test message from each neighbor
-	MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, MPI::ANY_SOURCE, tag, status );
-//	std::cout << "ID " << id << " receiving message " << msgIn << " from Philosopher ";
-//	std::cout << status.Get_source() << std::endl;
+	msgOut = rand() % p;
 
-	MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, MPI::ANY_SOURCE, tag, status );
-//	std::cout << "ID " << id << " receiving message " << msgIn << " from Philosopher ";
-//	std::cout << status.Get_source() << std::endl;	
+	if(!firstIteration)
+	{
+		if(id != 0 && id != p-1)
+		{
+			MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, id+1, tag, status );
+			MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, id-1, tag, status );
+		}
+		else if(id ==0)
+		{
+			MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, id+1, tag, status );
+                        MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, p-1, tag, status );
+		}
+		else
+		{
+			MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, 0, tag, status );
+                        MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, id-1, tag, status );
+		}
+	}
+	if(isEven)
+	{
+		MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
+		MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
+	}
+	else
+	{
+		int rosa = p - 1;
+		if(id%2 == 0)
+		{
+			MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
+                	MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
+		}
+		else if(id%2 == 1 && id != rosa)
+		{
+			MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rosa, tag );
+		}
+		else{
+			for(int i = 0; i < p; i++)
+			{
+				if(i%2 ==0)
+					MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, i, tag );
+			}
+		}
 
-	//LET'S JUST IGNORE THE MESSAGES AND ASSUME IT'S SAFE TO WRITE TO THE FILE!
-    //std::cout << "ID: " << id << " CARELESSLY writing to " << lFile << " and " << rFile << endl;
-    //If you want to see correct poems, change MAXMESSAGES to something VERY small and add this sleep
-//	sleep(id); //will delay each process so the initial interleaving(s) will likely be OK
-  
-    //construct poem & output stanzas into the files 'simultaneously'
-	//we do this with an intermediate variable so both files contain the same poem!
+	}
 	foutLeft << id << "'s poem:" << endl;
 	foutRight << id << "'s poem:" << endl;
 	
@@ -94,6 +123,7 @@ int main ( int argc, char *argv[] )
 	foutLeft << stanza3 << endl << endl;
     foutRight << stanza3 << endl << endl;
 
+    firstIteration = false;
     numWritten++;
   }
 

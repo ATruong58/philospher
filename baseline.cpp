@@ -83,7 +83,7 @@ int main ( int argc, char *argv[] )
   while (numWritten < MAXMESSAGES) {
 	msgOut = rand() % p;
 
-	if(id%2 == 0 && firstIteration)
+	if(id%2 == 0 && firstIteration && id != p-1)
 	{
 		write(foutLeft, foutRight, P, id);
 		if(isEven)

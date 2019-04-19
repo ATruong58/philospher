@@ -4,11 +4,11 @@
 	Class: Cs 3800 section B
 */
 
-#include &lt;cstdlib&gt;
-#include &lt;iostream&gt;
-#include &lt;fstream&gt;
-#include &lt;cerrno&gt;
-#include &lt;unistd.h&gt;
+#include <cstdlib>
+#include <iostream>
+#include <fstream>
+#include <cerrno>
+#include <unistd.h>
 #include "mpi.h"
 #include "pomerize.h"
 
@@ -16,23 +16,23 @@
 using namespace std;
 
 //Function to write out the stanza
-void write(ofstream &amp;foutLeft, ofstream&amp; foutRight, pomerize &amp;P, int id)
+void write(ofstream &foutLeft, ofstream& foutRight, pomerize &P, int id)
 {
-	foutLeft &lt;&lt; id &lt;&lt; "'s poem:" &lt;&lt; endl;
-	foutRight &lt;&lt; id &lt;&lt; "'s poem:" &lt;&lt; endl;
+	foutLeft << id << "'s poem:" << endl;
+	foutRight << id << "'s poem:" << endl;
 	
 	string stanza1, stanza2, stanza3;
     stanza1 = P.getLine();
-	foutLeft &lt;&lt; stanza1 &lt;&lt; endl;
-    foutRight &lt;&lt; stanza1 &lt;&lt; endl;
+	foutLeft << stanza1 << endl;
+    foutRight << stanza1 << endl;
 
 	stanza2 = P.getLine();
-	foutLeft &lt;&lt; stanza2 &lt;&lt; endl;
-    foutRight &lt;&lt; stanza2 &lt;&lt; endl;
+	foutLeft << stanza2 << endl;
+    foutRight << stanza2 << endl;
 
 	stanza3 = P.getLine();
-	foutLeft &lt;&lt; stanza3 &lt;&lt; endl &lt;&lt; endl;
-    foutRight &lt;&lt; stanza3 &lt;&lt; endl &lt;&lt; endl;
+	foutLeft << stanza3 << endl << endl;
+    foutRight << stanza3 << endl << endl;
 
 	return;
 }
@@ -60,9 +60,9 @@ int main ( int argc, char *argv[] )
   id = MPI::COMM_WORLD.Get_rank ( );
   
   //Safety check - need at least 2 philosophers to make sense
-  if (p &lt; 2) {
+  if (p < 2) {
 	    MPI::Finalize ( );
-	    std::cerr &lt;&lt; "Need at least 2 philosophers! Try again" &lt;&lt; std::endl;
+	    std::cerr << "Need at least 2 philosophers! Try again" << std::endl;
 	    return 1; //non-normal exit
   }
 
@@ -87,18 +87,18 @@ int main ( int argc, char *argv[] )
   ofstream foutLeft(lFile.c_str(), ios::out | ios::app );
   ofstream foutRight(rFile.c_str(), ios::out | ios::app );
 
-  while (numWritten &lt; MAXMESSAGES) {
+  while (numWritten < MAXMESSAGES) {
 	msgOut = rand() % p;
 
 	//If first run through no recieve and even id
-	if(id%2 == 0 &amp;&amp; firstIteration &amp;&amp; id != p-1)
+	if(id%2 == 0 && firstIteration && id != p-1)
 	{
 		write(foutLeft, foutRight, P, id);
 		//If the total number of philosopher is even send to odd 
 		if(isEven)
 		{
-			MPI::COMM_WORLD.Send ( &amp;msgOut, 1, MPI::INT, rightNeighbor, tag );
-			MPI::COMM_WORLD.Send ( &amp;msgOut, 1, MPI::INT, leftNeighbor, tag );
+			MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
+			MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
 		}
 		//If the total number of philospher is odd
 		else
@@ -106,13 +106,13 @@ int main ( int argc, char *argv[] )
 			//If it is the first id send only to right neighbor
 			if(id == 0)
 			{
-				MPI::COMM_WORLD.Send ( &amp;msgOut, 1, MPI::INT, rightNeighbor, tag );
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
 			}
 			//else all even will send to left and right 
 			else
 			{	
-				MPI::COMM_WORLD.Send ( &amp;msgOut, 1, MPI::INT, rightNeighbor, tag );
-				MPI::COMM_WORLD.Send ( &amp;msgOut, 1, MPI::INT, leftNeighbor, tag );
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
 			}
 		}
 		//set falseIteration to false to indicate first run is over
@@ -122,15 +122,15 @@ int main ( int argc, char *argv[] )
 	else if(isEven)
 	{	
 		//recieve from the odd id
-		MPI::COMM_WORLD.Recv ( &amp;msgIn, 1, MPI::INT, rightNeighbor, tag, status );
-		MPI::COMM_WORLD.Recv ( &amp;msgIn, 1, MPI::INT, leftNeighbor, tag, status );
+		MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, rightNeighbor, tag, status );
+		MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, leftNeighbor, tag, status );
 		
 		//write the stanza
 		write(foutLeft, foutRight, P, id);
 		
 		//send signal to odd
-		MPI::COMM_WORLD.Send ( &amp;msgOut, 1, MPI::INT, rightNeighbor, tag );
-		MPI::COMM_WORLD.Send ( &amp;msgOut, 1, MPI::INT, leftNeighbor, tag );
+		MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
+		MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
 	}
 	//if it is not firstIteration and there is an oddphilosopher 
 	else
@@ -139,29 +139,29 @@ int main ( int argc, char *argv[] )
 		int rosa = p - 1;
 
 		//if we are on even ids and not the last id
-		if(id%2 == 0 &amp;&amp; id != rosa)
+		if(id%2 == 0 && id != rosa)
 		{
 			//if it is first id
 			if(id == 0)
 			{	
 				//recieve from last id
-				MPI::COMM_WORLD.Recv ( &amp;msgIn, 1, MPI::INT, rosa, tag, status );
+				MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, rosa, tag, status );
 				
 				write(foutLeft, foutRight, P, id);
 
 				//write to only right neighbor
-				MPI::COMM_WORLD.Send ( &amp;msgOut, 1, MPI::INT, 1, tag );
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, 1, tag );
 			}
 			else
 			{	
 				//recieve from last id 
-				MPI::COMM_WORLD.Recv ( &amp;msgIn, 1, MPI::INT, rosa, tag, status );
+				MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, rosa, tag, status );
 				
 				write(foutLeft, foutRight, P, id);
 				
 				//even will right to right and left neighbor
-				MPI::COMM_WORLD.Send ( &amp;msgOut, 1, MPI::INT, rightNeighbor, tag );
-				MPI::COMM_WORLD.Send ( &amp;msgOut, 1, MPI::INT, leftNeighbor, tag );
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
 			}
 		}
 		//else if id is odd
@@ -171,24 +171,24 @@ int main ( int argc, char *argv[] )
 			if(id == rosa-1)
 			{
 				//recieve from left neighbor only
-				MPI::COMM_WORLD.Recv ( &amp;msgIn, 1, MPI::INT, id-1, tag, status );
+				MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, id-1, tag, status );
 				
 				write(foutLeft, foutRight, P, id);
 				
 				//write to the last id
-				MPI::COMM_WORLD.Send ( &amp;msgOut, 1, MPI::INT, rosa, tag );
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rosa, tag );
 			}
 			//if all other odd ids
 			if(id != rosa-1)
 			{
 				//recieve from left and right neighbors
-				MPI::COMM_WORLD.Recv ( &amp;msgIn, 1, MPI::INT, rightNeighbor, tag, status );
-				MPI::COMM_WORLD.Recv ( &amp;msgIn, 1, MPI::INT, leftNeighbor, tag, status );
+				MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, rightNeighbor, tag, status );
+				MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, leftNeighbor, tag, status );
 				
 				write(foutLeft, foutRight, P, id);
 				
 				//send to last id
-				MPI::COMM_WORLD.Send ( &amp;msgOut, 1, MPI::INT, rosa, tag );
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rosa, tag );
 			}
 			
 		}
@@ -196,22 +196,22 @@ int main ( int argc, char *argv[] )
 		else if(id == rosa)
 		{
 			//recieve from odd even id
-			for (int i = 0; i &lt; p; i++)
+			for (int i = 0; i < p; i++)
 			{
 				if(i%2 != 0)
 				{
-					MPI::COMM_WORLD.Recv ( &amp;msgIn, 1, MPI::INT, i , tag, status );
+					MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, i , tag, status );
 				}
 			}
 
 			write(foutLeft, foutRight, P, id);
 
 			//send to every even id
-			for (int i = 0; i &lt; p; i++)
+			for (int i = 0; i < p; i++)
 			{
 				if(i%2 == 0 || i != rosa)
 				{
-					MPI::COMM_WORLD.Send ( &amp;msgOut, 1, MPI::INT, i, tag );
+					MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, i, tag );
 				}
 			}
 		}

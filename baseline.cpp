@@ -6,7 +6,10 @@
 #include "mpi.h"
 #include "pomerize.h"
 
-void write()
+//run compiled code (for 5 philosophers) with mpirun -n 5 program
+using namespace std;
+
+void write(ofstream &foutLeft, ofstream& foutRight, pomerize &P, int id)
 {
 	foutLeft << id << "'s poem:" << endl;
 	foutRight << id << "'s poem:" << endl;
@@ -27,11 +30,8 @@ void write()
 	return;
 }
 
-//run compiled code (for 5 philosophers) with mpirun -n 5 program
-using namespace std;
-
 //this is how many poems you want each Phil to construct & save
-const int MAXMESSAGES = 20; 
+const int MAXMESSAGES = 10; 
 
 //if you change this base, update the Makefile "clean" accordingly
 const string fileBase = "outFile"; 
@@ -85,17 +85,32 @@ int main ( int argc, char *argv[] )
 
 	if(id%2 == 0 && firstIteration)
 	{
-		write();
-		MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
-		MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
-
-		firstItereration = false;
+		write(foutLeft, foutRight, P, id);
+		if(isEven)
+		{
+			MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
+			MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
+		}
+		else
+		{
+			if(id == 0)
+			{
+				//MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, p-2, tag );
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
+			}
+			else
+			{	
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
+			}
+		}
+		firstIteration = false;
 	}
-	else(isEven)
+	else if(isEven)
 	{
-		MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, rigthNeighbor, tag, status );
+		MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, rightNeighbor, tag, status );
 		MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, leftNeighbor, tag, status );
-		write();
+		write(foutLeft, foutRight, P, id);
 		MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
 		MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
 	}
@@ -104,34 +119,36 @@ int main ( int argc, char *argv[] )
 		int rosa = p - 1;
 		if(id%2 == 0 && id != rosa)
 		{
-			MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, rosa, tag, status );
-			write();
-
 			if(id == 0)
 			{
-				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, p-2, tag );
-				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rigthNeighbor, tag );
+				MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, rosa, tag, status );
+				write(foutLeft, foutRight, P, id);
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, 1, tag );
 			}
 			else
 			{	
+				MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, rosa, tag, status );
+				write(foutLeft, foutRight, P, id);
 				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
 				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
 			}
 		}
-		else if(id%2 != 0 && id != rosa)
+		else if(id%2 != 0)
 		{
-			if(id != p-2)
+			if(id == rosa-1)
 			{
-				MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, rigthNeighbor, tag, status );
-				MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, leftNeighbor, tag, status );
+				MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, id-1, tag, status );
+				write(foutLeft, foutRight, P, id);
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rosa, tag );
 			}
-			else
+			if(id != rosa-1)
 			{
+				MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, rightNeighbor, tag, status );
 				MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, leftNeighbor, tag, status );
-				MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, 0, tag, status );
+				write(foutLeft, foutRight, P, id);
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rosa, tag );
 			}
-			write();
-			MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rosa, tag );
+			
 		}
 		else if(id == rosa)
 		{
@@ -142,7 +159,7 @@ int main ( int argc, char *argv[] )
 					MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, i , tag, status );
 				}
 			}
-			write();
+			write(foutLeft, foutRight, P, id);
 			for (int i = 0; i < p; i++)
 			{
 				if(i%2 == 0)

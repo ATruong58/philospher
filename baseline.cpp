@@ -62,8 +62,36 @@ int main ( int argc, char *argv[] )
 
   while (numWritten < MAXMESSAGES) {
 	msgOut = rand() % p;
+	if(id%2 == 0 && firstIteration)
+	{
+		if(isEven)
+        	{
+                	MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
+                	MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
+        	}
+        	else
+        	{
+                	int rosa = p - 1;
+                	if(id%2 == 0)
+                	{
+                        	MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
+                        	MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
+                	}
+                	else if(id%2 == 1 && id != rosa)
+                	{
+                        	MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rosa, tag );
+                	}
+                	else{
+                        	for(int i = 0; i < p; i++)
+                        	{
+                                	if(i%2 ==0)
+                                        	MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, i, tag );
+                        	}
+                	}
 
-	if(!firstIteration)
+        	}
+	}
+	else
 	{
 		if(id != 0 && id != p-1)
 		{
@@ -80,32 +108,33 @@ int main ( int argc, char *argv[] )
 			MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, 0, tag, status );
                         MPI::COMM_WORLD.Recv ( &msgIn, 1, MPI::INT, id-1, tag, status );
 		}
-	}
-	if(isEven)
-	{
-		MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
-		MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
-	}
-	else
-	{
-		int rosa = p - 1;
-		if(id%2 == 0)
+	
+		if(isEven)
 		{
 			MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
-                	MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
+			MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
 		}
-		else if(id%2 == 1 && id != rosa)
+		else
 		{
-			MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rosa, tag );
-		}
-		else{
-			for(int i = 0; i < p; i++)
+			int rosa = p - 1;
+			if(id%2 == 0)
 			{
-				if(i%2 ==0)
-					MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, i, tag );
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rightNeighbor, tag );
+                		MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, leftNeighbor, tag );
 			}
-		}
+			else if(id%2 == 1 && id != rosa)
+			{
+				MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, rosa, tag );
+			}
+			else{
+				for(int i = 0; i < p; i++)
+				{
+					if(i%2 ==0)
+						MPI::COMM_WORLD.Send ( &msgOut, 1, MPI::INT, i, tag );
+				}
+			}
 
+		}	
 	}
 	foutLeft << id << "'s poem:" << endl;
 	foutRight << id << "'s poem:" << endl;
